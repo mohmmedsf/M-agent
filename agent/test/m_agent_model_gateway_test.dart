@@ -57,9 +57,9 @@ void main() {
       _FakeProvider('provider-b', {'model-a'}),
     ]);
 
-    final provider = const ModelRouter;
+    final router = ModelRouter(registry);
     expect(
-      provider(registry)
+      router
           .resolve(const ModelRoute(model: 'model-a', providerId: 'provider-b'))
           .id,
       'provider-b',

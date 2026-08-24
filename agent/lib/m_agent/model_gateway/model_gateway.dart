@@ -1,6 +1,8 @@
 import 'model.dart';
+import 'model_provider.dart';
 import 'model_registry.dart';
 import 'model_router.dart';
+import 'model_routing_policy.dart';
 
 class ModelGateway {
   const ModelGateway({required this.registry});
@@ -10,9 +12,12 @@ class ModelGateway {
   Future<ModelResponse> complete(
     ModelRequest request, {
     String? providerId,
+    ModelRoutingPolicy? policy,
   }) {
-    final provider = ModelRouter(registry).resolve(
-      ModelRoute(model: request.model, providerId: providerId),
+    final provider = _resolve(
+      request.model,
+      providerId: providerId,
+      policy: policy,
     );
     return provider.complete(request);
   }
@@ -20,10 +25,27 @@ class ModelGateway {
   Stream<ModelStreamChunk> stream(
     ModelRequest request, {
     String? providerId,
+    ModelRoutingPolicy? policy,
   }) {
-    final provider = ModelRouter(registry).resolve(
-      ModelRoute(model: request.model, providerId: providerId),
+    final provider = _resolve(
+      request.model,
+      providerId: providerId,
+      policy: policy,
     );
     return provider.stream(request);
+  }
+
+  ModelProvider _resolve(
+    String model, {
+    String? providerId,
+    ModelRoutingPolicy? policy,
+  }) {
+    if (policy != null) {
+      return policy.resolve(registry: registry, model: model);
+    }
+
+    return ModelRouter(registry).resolve(
+      ModelRoute(model: model, providerId: providerId),
+    );
   }
 }

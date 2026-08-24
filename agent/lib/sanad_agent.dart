@@ -14,3 +14,4 @@ export 'm_agent/model_gateway/model_gateway.dart';
 export 'm_agent/model_gateway/model_provider.dart';
 export 'm_agent/model_gateway/model_registry.dart';
 export 'm_agent/model_gateway/model_router.dart';
+export 'm_agent/model_gateway/model_routing_policy.dart';

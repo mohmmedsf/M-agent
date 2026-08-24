@@ -5,14 +5,25 @@ import 'package:sanad_agent/m_agent/model_gateway/model_gateway.dart';
 import 'package:sanad_agent/m_agent/model_gateway/model_provider.dart';
 import 'package:sanad_agent/m_agent/model_gateway/model_registry.dart';
 import 'package:sanad_agent/m_agent/model_gateway/model_router.dart';
+import 'package:sanad_agent/m_agent/model_gateway/model_routing_policy.dart';
 
 class _FakeProvider implements ModelProvider {
-  _FakeProvider(this.id, this.models);
+  _FakeProvider(
+    this.id,
+    this.models, {
+    Set<ModelCapability>? supportedCapabilities,
+  }) : _supportedCapabilities =
+          supportedCapabilities ??
+          const {
+            ModelCapability.streaming,
+            ModelCapability.toolCalling,
+          };
 
   @override
   final String id;
 
   final Set<String> models;
+  final Set<ModelCapability> _supportedCapabilities;
 
   @override
   String get displayName => id;
@@ -21,10 +32,7 @@ class _FakeProvider implements ModelProvider {
   bool supports(String model) => models.contains(model);
 
   @override
-  Set<ModelCapability> capabilities(String model) => {
-        ModelCapability.streaming,
-        ModelCapability.toolCalling,
-      };
+  Set<ModelCapability> capabilities(String model) => _supportedCapabilities;
 
   @override
   Future<ModelResponse> complete(ModelRequest request) async =>
@@ -78,6 +86,42 @@ void main() {
 
     expect(response.provider, 'provider-a');
     expect(response.output, 'ok');
+  });
+
+  test('routing policy prefers the requested provider', () {
+    final registry = ModelRegistry([
+      _FakeProvider('primary', {'model-a'}),
+      _FakeProvider('fallback', {'model-a'}),
+    ]);
+
+    final provider = const ModelRoutingPolicy(
+      preferredProviderId: 'fallback',
+      fallbackProviderIds: ['primary'],
+    ).resolve(registry: registry, model: 'model-a');
+
+    expect(provider.id, 'fallback');
+  });
+
+  test('routing policy skips providers missing required capabilities', () {
+    final registry = ModelRegistry([
+      _FakeProvider('no-vision', {'model-a'}),
+      _FakeProvider(
+        'vision',
+        {'model-a'},
+        supportedCapabilities: {
+          ModelCapability.streaming,
+          ModelCapability.toolCalling,
+          ModelCapability.vision,
+        },
+      ),
+    ]);
+
+    final provider = const ModelRoutingPolicy(
+      fallbackProviderIds: ['no-vision', 'vision'],
+      requiredCapabilities: {ModelCapability.vision},
+    ).resolve(registry: registry, model: 'model-a');
+
+    expect(provider.id, 'vision');
   });
 
   test('registry fails clearly for an unsupported model', () {

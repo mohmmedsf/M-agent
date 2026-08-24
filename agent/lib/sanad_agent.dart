@@ -9,6 +9,7 @@ export 'engine/adapters/base_openai_adapter.dart';
 
 // M Agent public foundation APIs.
 export 'm_agent/identity.dart';
+export 'm_agent/product/product.dart';
 export 'm_agent/model_gateway/model.dart';
 export 'm_agent/model_gateway/model_gateway.dart';
 export 'm_agent/model_gateway/model_provider.dart';
